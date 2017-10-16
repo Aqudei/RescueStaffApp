@@ -88,4 +88,7 @@
     <string name="injured_text">INJURED</string>
     <string name="missing_text">MISSING</string>
     <string name="dead_text">DEAD</string>
+    <string name="push_unsent_to_server">Push Unsent To Server</string>
+    <string name="clear_check_ins">Clear Check Ins</string>
+    <string name="manual_check_ins">Manual Check Ins</string>
 </resources>

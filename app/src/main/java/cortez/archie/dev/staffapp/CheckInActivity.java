@@ -8,11 +8,14 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.icu.text.StringSearch;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
+import android.view.Menu;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -59,10 +62,21 @@ public class CheckInActivity extends AppCompatActivity {
         progressSending = (ProgressBar) findViewById(R.id.progressBarSending);
         progressSending.setVisibility(View.GONE);
 
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
+        ActionBar ab = getSupportActionBar();
+        ab.setDisplayShowHomeEnabled(true);
+
         setupSearch();
         readMembers();
         setupListView();
         setupSms();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.toolbar_menu, menu);
+        return true;
     }
 
     private void showProgress() {
@@ -129,7 +143,7 @@ public class CheckInActivity extends AppCompatActivity {
 
                                 PendingIntent sentSms = PendingIntent.getBroadcast(CheckInActivity.this,
                                         0, new Intent(INTENT_FILTER_SENT), 0);
-                                String message = String.format("\"id\":%d, \"scope\":\"self\", \"status\":\"%s\"",
+                                String message = String.format("{\"id\":%d, \"scope\":\"self\", \"status\":\"%s\"}",
                                         person.getId(), status);
                                 showProgress();
                                 SmsManager.getDefault().sendTextMessage(contact, null,

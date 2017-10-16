@@ -11,7 +11,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme.NoActionBar">
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,7 +27,15 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="cortez.archie.dev.staffapp.MainActivity" />
         </activity>
-        <activity android:name=".CheckInActivity"></activity>
+        <activity
+            android:name=".CheckInActivity"
+            android:label="@string/manual_check_ins"
+            android:parentActivityName=".MainActivity">
+
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="cortez.archie.dev.staffapp.MainActivity" />
+        </activity>
     </application>
 
 </manifest>
