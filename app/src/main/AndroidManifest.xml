@@ -27,15 +27,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="cortez.archie.dev.staffapp.MainActivity" />
         </activity>
-        <activity
-            android:name=".CheckInActivity"
-            android:label="@string/title_activity_check_in"
-            android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="cortez.archie.dev.staffapp.MainActivity" />
-        </activity>
+        <activity android:name=".CheckInActivity"></activity>
     </application>
 
 </manifest>

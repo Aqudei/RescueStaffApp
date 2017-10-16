@@ -1,12 +1,21 @@
 package cortez.archie.dev.staffapp;
 
+import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
@@ -16,7 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.security.Permission;
 
 import cortez.archie.dev.staffapp.models.Center;
 import cortez.archie.dev.staffapp.services.RescueService;
@@ -26,18 +35,23 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String FILENAME_CENTER_INFO = "center.json";
-    private static final String FILENAME_CHECK_INS = "check_ins.json";
+    public static final String FILENAME_CENTER_INFO = "center.json";
+    public static final String FILENAME_CHECK_INS = "check_ins.json";
+    private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 5;
 
     private SharedPreferences sharedPreferences;
     private Gson gsonParser;
     private TextView textViewCenterAddress;
     private TextView textViewCenterName;
+    private LinearLayout progress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        progress = (LinearLayout) findViewById(R.id.linearLayoutProgress);
+        hideProgress();
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         gsonParser = new Gson();
@@ -46,6 +60,48 @@ public class MainActivity extends AppCompatActivity {
         textViewCenterAddress = (TextView) findViewById(R.id.textViewCenterAddress);
 
         readCenterInfo();
+
+        requestSendingSmsPermission();
+    }
+
+    private void requestSendingSmsPermission() {
+        if (ContextCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.READ_CONTACTS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
+                    Manifest.permission.SEND_SMS)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Permission Request")
+                        .setMessage("This app needs to send sms to notify server about a person's status.")
+                        .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                            @Override
+                            public void onDismiss(DialogInterface dialog) {
+                                ActivityCompat.requestPermissions(MainActivity.this,
+                                        new String[]{Manifest.permission.SEND_SMS},
+                                        MY_PERMISSIONS_REQUEST_SEND_SMS);
+                            }
+                        });
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{Manifest.permission.SEND_SMS},
+                        MY_PERMISSIONS_REQUEST_SEND_SMS);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        }
     }
 
     private void readCenterInfo() {
@@ -53,13 +109,13 @@ public class MainActivity extends AppCompatActivity {
             FileInputStream fileInput = openFileInput(FILENAME_CENTER_INFO);
             InputStreamReader reader = new InputStreamReader(fileInput);
             Center center = gsonParser.fromJson(reader, Center.class);
-            updateCenterDispaly(center);
+            updateCenterDisplay(center);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    private void updateCenterDispaly(Center center) {
+    private void updateCenterDisplay(Center center) {
         if (center != null) {
             textViewCenterAddress.setText(center.getAddress());
             textViewCenterName.setText(center.getCenterName());
@@ -125,11 +181,21 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Center center) {
             super.onPostExecute(center);
-            updateCenterDispaly(center);
+            updateCenterDisplay(center);
+            hideProgress();
         }
     }
 
     public void doSync(View view) {
+        showProgress();
         new SyncTask().execute();
+    }
+
+    public void showProgress() {
+        progress.setVisibility(View.VISIBLE);
+    }
+
+    public void hideProgress() {
+        progress.setVisibility(View.INVISIBLE);
     }
 }

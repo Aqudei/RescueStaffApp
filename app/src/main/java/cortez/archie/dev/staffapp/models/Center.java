@@ -9,6 +9,15 @@ import java.util.List;
 
 public class Center {
 
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    private  int id;
     public Center() {
         members = new ArrayList<>();
     }
@@ -42,4 +51,22 @@ public class Center {
 
     private List<MemberInfo> members;
 
+    public String getInCharge() {
+        return InCharge;
+    }
+
+    public void setInCharge(String inCharge) {
+        InCharge = inCharge;
+    }
+
+    public String getInChargeCellphone() {
+        return InChargeCellphone;
+    }
+
+    public void setInChargeCellphone(String inChargeCellphone) {
+        InChargeCellphone = inChargeCellphone;
+    }
+
+    private String InCharge;
+    private String InChargeCellphone;
 }

@@ -84,4 +84,8 @@
     <string name="center_address">Evacuation Center Address</string>
     <string name="please_sync">[Please Sync First]</string>
     <string name="title_activity_check_in">Check In</string>
+    <string name="safe_text">SAFE</string>
+    <string name="injured_text">INJURED</string>
+    <string name="missing_text">MISSING</string>
+    <string name="dead_text">DEAD</string>
 </resources>
