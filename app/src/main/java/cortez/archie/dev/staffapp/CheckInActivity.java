@@ -1,13 +1,11 @@
 package cortez.archie.dev.staffapp;
 
 import android.app.PendingIntent;
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.icu.text.StringSearch;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -16,6 +14,7 @@ import android.support.v7.widget.Toolbar;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -23,16 +22,20 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.SearchView;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import cortez.archie.dev.staffapp.models.Center;
+import cortez.archie.dev.staffapp.models.CheckIn;
 import cortez.archie.dev.staffapp.models.MemberInfo;
 
 public class CheckInActivity extends AppCompatActivity {
@@ -47,6 +50,8 @@ public class CheckInActivity extends AppCompatActivity {
     private RadioButton radioMissing;
     private RadioButton radioDead;
     private ProgressBar progressSending;
+    private Gson gsonParser = new Gson();
+    private List<CheckIn> notSentList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,16 +72,43 @@ public class CheckInActivity extends AppCompatActivity {
         ActionBar ab = getSupportActionBar();
         ab.setDisplayShowHomeEnabled(true);
 
+        readNotSentCheckIns();
         setupSearch();
         readMembers();
         setupListView();
         setupSms();
     }
 
+    private void readNotSentCheckIns() {
+        try {
+            FileInputStream file = openFileInput(MainActivity.FILENAME_NOTSENT_CHECK_INS);
+            InputStreamReader reader = new InputStreamReader(file);
+            CheckIn[] checkIns = gsonParser.fromJson(reader, CheckIn[].class);
+            notSentList.addAll(Arrays.asList(checkIns));
+            reader.close();
+            file.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.toolbar_menu, menu);
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.clearCheckInMenuItem) {
+            deleteFile(MainActivity.FILENAME_NOTSENT_CHECK_INS);
+            notSentList.clear();
+            return true;
+        }
+
+        return false;
     }
 
     private void showProgress() {
@@ -92,6 +124,20 @@ public class CheckInActivity extends AppCompatActivity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (getResultCode() == RESULT_OK) {
+
+                } else {
+
+                    Bundle bundle = intent.getExtras();
+                    if (bundle != null) {
+                        String body = bundle.getString("sms_body", "");
+                        if (TextUtils.isEmpty(body) == false) {
+                            CheckIn chkIn = gsonParser.fromJson(body, CheckIn.class);
+                            if (chkIn != null && chkIn.getId() != -1) {
+                                notSentList.add(chkIn);
+                            }
+                        }
+                    }
+
 
                 }
                 hideProgress();
@@ -141,10 +187,13 @@ public class CheckInActivity extends AppCompatActivity {
                                     return;
                                 }
 
-                                PendingIntent sentSms = PendingIntent.getBroadcast(CheckInActivity.this,
-                                        0, new Intent(INTENT_FILTER_SENT), 0);
+
                                 String message = String.format("{\"id\":%d, \"scope\":\"self\", \"status\":\"%s\"}",
                                         person.getId(), status);
+                                Intent intent = new Intent(INTENT_FILTER_SENT);
+                                intent.putExtra("sms_body", message);
+                                PendingIntent sentSms = PendingIntent.getBroadcast(CheckInActivity.this,
+                                        0, intent, 0);
                                 showProgress();
                                 SmsManager.getDefault().sendTextMessage(contact, null,
                                         message, sentSms, null);
@@ -166,9 +215,9 @@ public class CheckInActivity extends AppCompatActivity {
     private void readMembers() {
         try {
             FileInputStream evacuation = openFileInput(MainActivity.FILENAME_CENTER_INFO);
-            Gson gson = new Gson();
+
             InputStreamReader reader = new InputStreamReader(evacuation);
-            center = gson.fromJson(reader, Center.class);
+            center = gsonParser.fromJson(reader, Center.class);
             reader.close();
 
         } catch (FileNotFoundException e) {
@@ -194,5 +243,21 @@ public class CheckInActivity extends AppCompatActivity {
                 return true;
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        deleteFile(MainActivity.FILENAME_NOTSENT_CHECK_INS);
+        try {
+            FileOutputStream file = openFileOutput(MainActivity.FILENAME_NOTSENT_CHECK_INS, MODE_APPEND);
+            String json = gsonParser.toJson(notSentList);
+            file.write(json.getBytes());
+            file.close();
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

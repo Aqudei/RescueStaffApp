@@ -36,7 +36,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity {
 
     public static final String FILENAME_CENTER_INFO = "center.json";
-    public static final String FILENAME_CHECK_INS = "check_ins.json";
+    public static final String FILENAME_NOTSENT_CHECK_INS = "check_ins.json";
     private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 5;
 
     private SharedPreferences sharedPreferences;
