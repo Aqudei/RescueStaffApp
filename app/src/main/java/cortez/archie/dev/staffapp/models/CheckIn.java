@@ -1,10 +1,15 @@
 package cortez.archie.dev.staffapp.models;
 
+import android.os.Parcelable;
+
+import java.io.Serializable;
+
 /**
  * Created by _develop on 20/10/2017.
  */
 
 public class CheckIn {
+
     public int getId() {
         return id;
     }

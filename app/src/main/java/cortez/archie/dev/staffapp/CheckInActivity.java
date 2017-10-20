@@ -6,6 +6,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -37,6 +40,10 @@ import java.util.List;
 import cortez.archie.dev.staffapp.models.Center;
 import cortez.archie.dev.staffapp.models.CheckIn;
 import cortez.archie.dev.staffapp.models.MemberInfo;
+import cortez.archie.dev.staffapp.services.RescueAndroidService;
+import cortez.archie.dev.staffapp.services.RescueService;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class CheckInActivity extends AppCompatActivity {
 
@@ -53,10 +60,13 @@ public class CheckInActivity extends AppCompatActivity {
     private Gson gsonParser = new Gson();
     private List<CheckIn> notSentList = new ArrayList<>();
 
+    private SharedPreferences sharedPreferences;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_check_in);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
         peopleListView = (ListView) findViewById(R.id.listViewPeople);
 
@@ -100,11 +110,48 @@ public class CheckInActivity extends AppCompatActivity {
         return true;
     }
 
+    class PushUnsentAsyncTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            String server_ip = sharedPreferences.getString("server_ip", "");
+            String server_port = sharedPreferences.getString("server_port", "8000");
+
+            if (TextUtils.isEmpty(server_ip))
+                return null;
+
+            String remoteUrl = String.format("http://%s:%s/api/", server_ip, server_port);
+            Retrofit retrofit = new Retrofit.Builder()
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .baseUrl(remoteUrl)
+                    .build();
+
+            RescueService rescueService = retrofit.create(RescueService.class);
+            for (CheckIn chkIn : notSentList) {
+                rescueService.uploadOneCheckin("" + chkIn.getId(), chkIn);
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            notSentList.clear();
+            deleteFile(MainActivity.FILENAME_NOTSENT_CHECK_INS);
+            hideProgress();
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.clearCheckInMenuItem) {
             deleteFile(MainActivity.FILENAME_NOTSENT_CHECK_INS);
             notSentList.clear();
+            return true;
+        } else if (item.getItemId() == R.id.pushUnsentMenuItem) {
+            showProgress();
+            new PushUnsentAsyncTask().execute();
             return true;
         }
 
