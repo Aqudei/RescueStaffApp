@@ -26,6 +26,7 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.SearchView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 
@@ -116,6 +117,8 @@ public class CheckInActivity extends AppCompatActivity {
 
     class PushUnsentAsyncTask extends AsyncTask<Void, Void, Void> {
 
+        private boolean withErrors = false;
+
         @Override
         protected Void doInBackground(Void... params) {
             Log.d("PUSH", "Pushing unsent messages");
@@ -142,6 +145,7 @@ public class CheckInActivity extends AppCompatActivity {
                     Response<ResponseBody> rslt = response.execute();
                 } catch (IOException e) {
                     e.printStackTrace();
+                    withErrors = true;
                 }
             }
 
@@ -154,6 +158,10 @@ public class CheckInActivity extends AppCompatActivity {
             notSentList.clear();
             deleteFile(MainActivity.FILENAME_NOTSENT_CHECK_INS);
             hideProgress();
+            if (!withErrors)
+                Toast.makeText(CheckInActivity.this, "Operation Done", Toast.LENGTH_LONG).show();
+            else
+                Toast.makeText(CheckInActivity.this, "Operation Done with Errors!", Toast.LENGTH_LONG).show();
         }
     }
 
