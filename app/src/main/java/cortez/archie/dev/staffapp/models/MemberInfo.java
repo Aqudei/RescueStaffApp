@@ -6,6 +6,10 @@ package cortez.archie.dev.staffapp.models;
 
 public class MemberInfo {
 
+    private String FirstName;
+    private String MiddleName;
+    private String LastName;
+
     public int getId() {
         return id;
     }
@@ -15,6 +19,7 @@ public class MemberInfo {
     }
 
     private int id;
+
     public String getFirstName() {
         return FirstName;
     }
@@ -38,10 +43,6 @@ public class MemberInfo {
     public void setLastName(String lasrName) {
         LastName = lasrName;
     }
-
-    private String FirstName;
-    private String MiddleName;
-    private String LastName;
 
     @Override
     public String toString() {

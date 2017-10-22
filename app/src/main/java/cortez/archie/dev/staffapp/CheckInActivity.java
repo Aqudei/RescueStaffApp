@@ -1,13 +1,14 @@
 package cortez.archie.dev.staffapp;
 
 import android.app.PendingIntent;
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.icu.text.StringSearch;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.Telephony;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -15,7 +16,9 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -23,16 +26,19 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.SearchView;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import cortez.archie.dev.staffapp.models.Center;
+import cortez.archie.dev.staffapp.models.CheckIn;
 import cortez.archie.dev.staffapp.models.MemberInfo;
 
 public class CheckInActivity extends AppCompatActivity {
@@ -47,11 +53,16 @@ public class CheckInActivity extends AppCompatActivity {
     private RadioButton radioMissing;
     private RadioButton radioDead;
     private ProgressBar progressSending;
+    private Gson gsonParser;
+
+    List<CheckIn> unsentCheckIns = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_check_in);
+
+        gsonParser = new Gson();
 
         peopleListView = (ListView) findViewById(R.id.listViewPeople);
 
@@ -66,11 +77,41 @@ public class CheckInActivity extends AppCompatActivity {
         setSupportActionBar(myToolbar);
         ActionBar ab = getSupportActionBar();
         ab.setDisplayShowHomeEnabled(true);
+        ab.setDisplayHomeAsUpEnabled(true);
 
         setupSearch();
         readMembers();
         setupListView();
         setupSms();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        if (item.getItemId() == R.id.push_unsent_menu) {
+            return true;
+        }
+
+        if (item.getItemId() == R.id.clear_chkins_menu) {
+            deleteFile(MainActivity.FILENAME_UNSENT_CHECKINS);
+            loadUnsentCheckIns();
+            return true;
+        }
+
+        return false;
+    }
+
+    private void loadUnsentCheckIns() {
+        try {
+            FileInputStream file = openFileInput(MainActivity.FILENAME_UNSENT_CHECKINS);
+            InputStreamReader reader = new InputStreamReader(file);
+
+            reader.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -93,11 +134,38 @@ public class CheckInActivity extends AppCompatActivity {
             public void onReceive(Context context, Intent intent) {
                 if (getResultCode() == RESULT_OK) {
 
+                } else {
+                    Bundle bundle = intent.getExtras();
+                    String uri = bundle.getString("uri");
+
+                    Cursor rslt = getContentResolver().query(Uri.parse(uri), null, null, null, null);
+                    rslt.moveToFirst();
+                    String body = rslt.getString(rslt.getColumnIndexOrThrow("body"));
+                    CheckIn checkIn = gsonParser.fromJson(body, CheckIn.class);
+                    if (checkIn != null && unsentCheckIns.contains(checkIn) == false) {
+                        unsentCheckIns.add(checkIn);
+                    }
                 }
                 hideProgress();
             }
         };
         registerReceiver(receiver, new IntentFilter(INTENT_FILTER_SENT));
+    }
+
+    @Override
+    protected void onPause() {
+        String json = gsonParser.toJson(unsentCheckIns);
+        deleteFile(MainActivity.FILENAME_UNSENT_CHECKINS);
+        try {
+            FileOutputStream file = openFileOutput(MainActivity.FILENAME_UNSENT_CHECKINS, MODE_APPEND);
+            file.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        super.onPause();
     }
 
     private void setupListView() {
