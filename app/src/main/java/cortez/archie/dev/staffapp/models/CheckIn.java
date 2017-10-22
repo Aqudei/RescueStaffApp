@@ -1,21 +1,21 @@
 package cortez.archie.dev.staffapp.models;
 
+import android.os.Parcelable;
+
+import java.io.Serializable;
+
 /**
- * Created by Administrator on 10/17/2017.
+ * Created by _develop on 20/10/2017.
  */
 
 public class CheckIn {
 
-    private int Id;
-    private String scope;
-    private String status;
-
-    public int getUserId() {
-        return Id;
+    public int getId() {
+        return id;
     }
 
-    public void setUserId(int id) {
-        Id = id;
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getScope() {
@@ -34,15 +34,11 @@ public class CheckIn {
         this.status = status;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null)
-            return false;
-
-        if (obj instanceof CheckIn) {
-            return getUserId() == ((CheckIn) obj).getUserId();
-        } else {
-            return false;
-        }
+    public CheckIn() {
+        setId(-1);
     }
+
+    int id;
+    String scope;
+    String status;
 }

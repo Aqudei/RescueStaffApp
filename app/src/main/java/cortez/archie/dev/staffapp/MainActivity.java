@@ -6,7 +6,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -23,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.security.Permission;
 
 import cortez.archie.dev.staffapp.models.Center;
 import cortez.archie.dev.staffapp.services.RescueService;
@@ -33,9 +36,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity {
 
     public static final String FILENAME_CENTER_INFO = "center.json";
-    public static final String FILENAME_UNSENT_CHECKINS = "unsent_check_ins.json";
+    public static final String FILENAME_NOTSENT_CHECK_INS = "check_ins.json";
     private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 5;
-    private static final int MY_PERMISSIONS_REQUEST_READ_SMS = 6;
 
     private SharedPreferences sharedPreferences;
     private Gson gsonParser;
@@ -59,50 +61,10 @@ public class MainActivity extends AppCompatActivity {
 
         readCenterInfo();
 
-        requestSendSmsPermission();
-        requestReadSmsPermission();
+        requestSendingSmsPermission();
     }
 
-    private void requestReadSmsPermission() {
-        if (ContextCompat.checkSelfPermission(MainActivity.this,
-                Manifest.permission.READ_SMS)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
-                    Manifest.permission.READ_SMS)) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Permission Request")
-                        .setMessage("This app needs to read sms to monitor send/unsent check ins.")
-                        .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                            @Override
-                            public void onDismiss(DialogInterface dialog) {
-                                ActivityCompat.requestPermissions(MainActivity.this,
-                                        new String[]{Manifest.permission.READ_SMS},
-                                        MY_PERMISSIONS_REQUEST_READ_SMS);
-                            }
-                        });
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-
-                ActivityCompat.requestPermissions(MainActivity.this,
-                        new String[]{Manifest.permission.READ_SMS},
-                        MY_PERMISSIONS_REQUEST_READ_SMS);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
-            }
-        }
-    }
-    private void requestSendSmsPermission() {
+    private void requestSendingSmsPermission() {
         if (ContextCompat.checkSelfPermission(MainActivity.this,
                 Manifest.permission.READ_CONTACTS)
                 != PackageManager.PERMISSION_GRANTED) {
