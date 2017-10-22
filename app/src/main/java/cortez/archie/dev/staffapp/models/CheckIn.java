@@ -41,4 +41,18 @@ public class CheckIn {
     int id;
     String scope;
     String status;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof CheckIn) {
+            CheckIn chk = (CheckIn) obj;
+            return getId() == chk.getId();
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return new Integer(getId()).hashCode();
+    }
 }

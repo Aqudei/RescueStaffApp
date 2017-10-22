@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -42,6 +43,9 @@ import cortez.archie.dev.staffapp.models.CheckIn;
 import cortez.archie.dev.staffapp.models.MemberInfo;
 import cortez.archie.dev.staffapp.services.RescueAndroidService;
 import cortez.archie.dev.staffapp.services.RescueService;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -114,13 +118,17 @@ public class CheckInActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... params) {
+            Log.d("PUSH", "Pushing unsent messages");
             String server_ip = sharedPreferences.getString("server_ip", "");
             String server_port = sharedPreferences.getString("server_port", "8000");
 
-            if (TextUtils.isEmpty(server_ip))
+            if (TextUtils.isEmpty(server_ip)) {
+                Log.d("PUSH", "No server IP found.");
                 return null;
+            }
 
             String remoteUrl = String.format("http://%s:%s/api/", server_ip, server_port);
+            Log.d("PUSH", "Request url is " + remoteUrl);
             Retrofit retrofit = new Retrofit.Builder()
                     .addConverterFactory(GsonConverterFactory.create())
                     .baseUrl(remoteUrl)
@@ -128,7 +136,13 @@ public class CheckInActivity extends AppCompatActivity {
 
             RescueService rescueService = retrofit.create(RescueService.class);
             for (CheckIn chkIn : notSentList) {
-                rescueService.uploadOneCheckin("" + chkIn.getId(), chkIn);
+                Log.d("PUSH", "Uploading unsent with id: " + chkIn.getId());
+                Call<ResponseBody> response = rescueService.uploadOneCheckin("" + chkIn.getId(), chkIn);
+                try {
+                    Response<ResponseBody> rslt = response.execute();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             return null;
@@ -145,11 +159,11 @@ public class CheckInActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.clearCheckInMenuItem) {
+        if (item.getItemId() == R.id.clear_chkins_menu) {
             deleteFile(MainActivity.FILENAME_NOTSENT_CHECK_INS);
             notSentList.clear();
             return true;
-        } else if (item.getItemId() == R.id.pushUnsentMenuItem) {
+        } else if (item.getItemId() == R.id.push_unsent_menu) {
             showProgress();
             new PushUnsentAsyncTask().execute();
             return true;
@@ -178,9 +192,11 @@ public class CheckInActivity extends AppCompatActivity {
                     if (bundle != null) {
                         String body = bundle.getString("sms_body", "");
                         if (TextUtils.isEmpty(body) == false) {
+                            Log.d("PUSH", "Message not sent, adding to unsent list: " + body);
                             CheckIn chkIn = gsonParser.fromJson(body, CheckIn.class);
                             if (chkIn != null && chkIn.getId() != -1) {
-                                notSentList.add(chkIn);
+                                if (notSentList.contains(chkIn) == false)
+                                    notSentList.add(chkIn);
                             }
                         }
                     }

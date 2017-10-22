@@ -2,12 +2,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/pushUnsentMenuItem"
         android:title="@string/push_unsent_to_server"
         app:showAsAction="never"
         android:id="@+id/push_unsent_menu"/>
     <item
-        android:id="@+id/clearCheckInMenuItem"
         android:title="@string/clear_check_ins"
         app:showAsAction="never"
         android:id="@+id/clear_chkins_menu"/>
